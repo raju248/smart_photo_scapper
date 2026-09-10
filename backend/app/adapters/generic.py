@@ -27,6 +27,19 @@ class Candidate:
     source: str
 
 
+async def goto_with_retry(page: Page, url: str, *, timeout: int = 45000, attempts: int = 3) -> None:
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            await page.goto(url, wait_until="domcontentloaded", timeout=timeout)
+            return
+        except Exception as exc:  # noqa: BLE001 - retry on any navigation failure
+            last_error = exc
+            if attempt < attempts - 1:
+                await asyncio.sleep(1.5 * (attempt + 1))
+    raise last_error
+
+
 def safe_name(text: str, fallback: str = "album") -> str:
     text = unquote(text or "").strip()
     text = re.sub(r'[<>:"/\\|?*\x00-\x1f]', "_", text)
@@ -181,7 +194,7 @@ async def discover_albums(context: BrowserContext, index_url: str, ctx: AdapterC
         ctx.job.current_album = "Discovering albums"
         await ctx.log(f"Opening album index page: {index_url}")
         await ctx.persist()
-        await page.goto(index_url, wait_until="domcontentloaded", timeout=45000)
+        await goto_with_retry(page, index_url)
         await auto_scroll(page, ctx)
         urls = await collect_album_links(page, index_url)
         ctx.job.discovered_album_urls = urls
@@ -302,7 +315,7 @@ class GenericAlbumAdapter:
         page = await ctx.browser_context.new_page()
         try:
             await ctx.log(f"Opening album {album_index}: {album_url}")
-            await page.goto(album_url, wait_until="domcontentloaded", timeout=45000)
+            await goto_with_retry(page, album_url)
             await auto_scroll(page, ctx)
 
             title = await title_or_slug(page, album_url, f"album-{album_index}")

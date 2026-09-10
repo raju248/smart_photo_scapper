@@ -54,7 +54,7 @@ async def run_job(job: ScrapeJob, store: JobStore) -> None:
         async with async_playwright() as p:
             browser = await p.chromium.launch(
                 headless=job.headless,
-                args=["--no-sandbox", "--disable-dev-shm-usage"],
+                args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-http2"],
             )
             context = await browser.new_context(
                 viewport={"width": 1440, "height": 1000},
