@@ -1,0 +1,16 @@
+# dependencies
+frontend/node_modules/
+frontend/.next/
+
+# python
+__pycache__/
+*.pyc
+.venv/
+
+# runtime data
+data/
+downloads/
+
+# env
+.env
+frontend/.env.local
