@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from playwright.async_api import async_playwright
 
 from .adapters.base import AdapterContext
@@ -7,6 +9,20 @@ from .adapters.generic import discover_albums
 from .adapters.registry import get_adapter
 from .jobs import JobStore
 from .models import ImageResult, ScrapeJob, utc_now_iso
+
+
+def _proxy_config() -> dict | None:
+    server = os.getenv("PROXY_SERVER")
+    if not server:
+        return None
+    proxy: dict = {"server": server}
+    username = os.getenv("PROXY_USERNAME")
+    password = os.getenv("PROXY_PASSWORD")
+    if username:
+        proxy["username"] = username
+    if password:
+        proxy["password"] = password
+    return proxy
 
 
 async def run_job(job: ScrapeJob, store: JobStore) -> None:
@@ -55,6 +71,7 @@ async def run_job(job: ScrapeJob, store: JobStore) -> None:
             browser = await p.chromium.launch(
                 headless=job.headless,
                 args=["--no-sandbox", "--disable-dev-shm-usage", "--disable-http2"],
+                proxy=_proxy_config(),
             )
             context = await browser.new_context(
                 viewport={"width": 1440, "height": 1000},
