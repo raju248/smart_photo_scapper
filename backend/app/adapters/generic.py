@@ -27,7 +27,7 @@ class Candidate:
     source: str
 
 
-async def goto_with_retry(page: Page, url: str, *, timeout: int = 45000, attempts: int = 3) -> None:
+async def goto_with_retry(page: Page, url: str, *, timeout: int = 45000, attempts: int = 4) -> None:
     last_error: Exception | None = None
     for attempt in range(attempts):
         try:
